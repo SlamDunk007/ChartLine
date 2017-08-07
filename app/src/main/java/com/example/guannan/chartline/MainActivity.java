@@ -14,12 +14,12 @@ public class MainActivity extends AppCompatActivity {
 
         Overlay overlay = (Overlay) findViewById(R.id.scoreTrend);
 
-        String[] xParamsValue = {"8月", "9月","10月","11月"};
+        String[] xParamsValue = {"7月","8月", "9月","10月","11月","12月"};
         float[] chartValues = new float[xParamsValue.length];
         for (int i = 0; i < xParamsValue.length; i++) {
-            chartValues[i] = new Random().nextInt(100);
+            chartValues[i] = new Random().nextInt(750);
         }
 
-        overlay.setCalValue(100,4,xParamsValue,chartValues);
+        overlay.setCalValue(750,10,xParamsValue,chartValues);
     }
 }
