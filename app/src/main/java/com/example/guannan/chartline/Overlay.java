@@ -10,9 +10,10 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -20,7 +21,7 @@ import java.util.ArrayList;
  * Created by guannan on 2017/8/2.
  */
 
-public class Overlay extends View {
+public class Overlay extends View implements View.OnTouchListener {
 
     private Context mContext;
     private Paint mDashLinePaint;
@@ -30,12 +31,9 @@ public class Overlay extends View {
     private int mTextPadding = 15;  //文字和刻度之间的间距
     private float mMultiple = 0.10f;
 
-    private String mMonth[] = new String[]{};
-    private float mValues[] = new float[]{200, 300, 325, 500, 725};
     private Paint mBottomLinePaint;
     private Paint mChartPaint;
     private float mTotalYPx;        //y轴总像素数
-    private float mTotalXPx;        //x轴总像素数
     private String mXCalValues[];   //x轴的坐标值
     private float mMaxYValue;       //y轴的最大值
     private int mYCalCount;         //y轴的刻度数
@@ -44,10 +42,15 @@ public class Overlay extends View {
     private ArrayList<String> mTotalYValue = new ArrayList<>();
     private ArrayList<Point> mTotalPoints;
     private Paint mPointPaint;
-    private int mTouchSlop;
     private int mBottomCalWidth;
     private float mDiffValue;
     private float mYPxValue;
+    private int mPosition = -1;
+
+    //折线的路径
+    private Path mPath = new Path();
+    private Paint mBgPaint;
+    private Paint mBgTextPaint;
 
     public Overlay(Context context) {
         this(context, null);
@@ -76,7 +79,7 @@ public class Overlay extends View {
         this.mYCalCount = calCount;
         this.mXCalValues = totalX;
         this.mChartValues = chartValues;
-        initData();
+        this.setOnTouchListener(this);
     }
 
     /**
@@ -108,9 +111,17 @@ public class Overlay extends View {
         mPointPaint = new Paint();
         mPointPaint.setStyle(Paint.Style.STROKE);
         mPointPaint.setAntiAlias(true);
-
-        ViewConfiguration configuration = ViewConfiguration.get(mContext);
-        mTouchSlop = configuration.getScaledTouchSlop();
+        //背景矩形
+        mBgPaint = new Paint();
+        mBgPaint.setStyle(Paint.Style.FILL);
+        mBgPaint.setColor(Color.parseColor("#717474"));
+        mBgPaint.setAntiAlias(true);
+        //点击背景显示的数量大小
+        mBgTextPaint = new Paint();
+        mBgTextPaint.setAntiAlias(true);
+        mBgTextPaint.setTextSize(dipToPx(12));
+        mBgTextPaint.setStyle(Paint.Style.FILL);
+        mBgTextPaint.setColor(Color.WHITE);
     }
 
     @Override
@@ -128,8 +139,6 @@ public class Overlay extends View {
 
         //底部刻度高度为15px，文字占用15dp，文字和刻度间距为15px
         mTotalYPx = mHeight - mHeight * mMultiple - dipToPx(15) - 2 * mTextPadding;
-        //视图距离左右间距为宽度的十分之一
-        mTotalXPx = mWidth - 2 * mWidth * mMultiple;
         //底部两个刻度之间的大小px
         mBottomCalWidth = (int) ((mWidth - 2 * mWidth * mMultiple) / mXCalValues.length);
         //刻度之外的间距距离
@@ -139,7 +148,7 @@ public class Overlay extends View {
 
         for (int i = 0; i < mYCalCount; i++) {
 
-            mTotalYValue.add(String.valueOf((int)(mMaxYValue - i * mYPxValue)));
+            mTotalYValue.add(String.valueOf((int) (mMaxYValue - i * mYPxValue)));
         }
 
         mTotalPoints = new ArrayList<>();
@@ -147,7 +156,6 @@ public class Overlay extends View {
 
         //初始化这线上每个点的坐标位置
         for (int i = 0; i < mXCalValues.length; i++) {
-            float calX;
             Point point = new Point();
             if (i == 0)
                 point.x = (int) (mWidth * mMultiple + mDiffValue / 2);
@@ -156,9 +164,11 @@ public class Overlay extends View {
 
             point.y = (int) (mHeight - dipToPx(15) - 2 * mTextPadding - mChartValues[i] * valueOfPx);
             mTotalPoints.add(point);
+            if (i == 0)  //连接所有的折线转折点
+                mPath.moveTo(point.x, point.y);
+            else
+                mPath.lineTo(point.x, point.y);
         }
-
-
     }
 
     @Override
@@ -171,6 +181,59 @@ public class Overlay extends View {
         drawTimeCal(canvas);
         drawChartLine(canvas);
         drawPointCircle(canvas);
+        drawRectBackGround(canvas);
+    }
+
+    /**
+     * 画点击的原点的背景
+     *
+     * @param canvas
+     */
+    private void drawRectBackGround(Canvas canvas) {
+
+        if (mPosition != -1) {
+
+            int x = mTotalPoints.get(mPosition).x;
+            int y = mTotalPoints.get(mPosition).y;
+            canvas.drawRect(x - dipToPx(15), y - dipToPx(18), x + dipToPx(15), y - dipToPx(6), mBgPaint);
+
+            String value = String.valueOf(mChartValues[mPosition]);
+            Rect rect = new Rect();
+            mBgTextPaint.getTextBounds(value,0,value.length(),rect);
+            canvas.drawText(value,x-rect.width()/2,y-dipToPx(12)+rect.height()/2,mBgTextPaint);
+        }
+    }
+
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+
+        boolean inArea = isInArea(motionEvent.getX(), motionEvent.getY());
+        switch (motionEvent.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                if (inArea) {
+                    postInvalidate();
+                    return true;
+                }
+                break;
+            case MotionEvent.ACTION_MOVE:
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+        }
+        return true;
+    }
+
+    public boolean isInArea(float x, float y) {
+
+        for (int i = 0; i < mTotalPoints.size(); i++) {
+            int tempX = mTotalPoints.get(i).x;
+            int tempY = mTotalPoints.get(i).y;
+            if (x >= tempX - dipToPx(5) && x <= tempX + dipToPx(5) && y >= tempY - dipToPx(5) && y <= tempY + dipToPx(5)) {
+                mPosition = i;
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -180,19 +243,14 @@ public class Overlay extends View {
      */
     private void drawPointCircle(Canvas canvas) {
 
-
         for (int i = 0; i < mTotalPoints.size(); i++) {
-
             mPointPaint.setStyle(Paint.Style.FILL);
             mPointPaint.setColor(Color.GREEN);
             canvas.drawCircle(mTotalPoints.get(i).x, mTotalPoints.get(i).y, dipToPx(2), mPointPaint);
-
             mPointPaint.setStyle(Paint.Style.STROKE);
             mPointPaint.setColor(Color.GREEN);
             canvas.drawCircle(mTotalPoints.get(i).x, mTotalPoints.get(i).y, dipToPx(4), mPointPaint);
         }
-
-
     }
 
     /**
@@ -202,12 +260,7 @@ public class Overlay extends View {
      */
     private void drawChartLine(Canvas canvas) {
 
-        Path path = new Path();
-        path.moveTo(mTotalPoints.get(0).x, mTotalPoints.get(0).y);
-        for (int i = 1; i < mTotalPoints.size(); i++) {
-            path.lineTo(mTotalPoints.get(i).x, mTotalPoints.get(i).y);
-        }
-        canvas.drawPath(path, mChartPaint);
+        canvas.drawPath(mPath, mChartPaint);
     }
 
     /**
@@ -234,7 +287,6 @@ public class Overlay extends View {
             pathCal.lineTo(calX, mHeight - dipToPx(15) - mTextPadding);
             canvas.drawPath(pathCal, mBottomLinePaint);
         }
-
 
     }
 
