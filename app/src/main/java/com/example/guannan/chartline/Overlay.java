@@ -13,7 +13,6 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -21,7 +20,7 @@ import java.util.ArrayList;
  * Created by guannan on 2017/8/2.
  */
 
-public class Overlay extends View implements View.OnTouchListener {
+public class Overlay extends View {
 
     private Context mContext;
     private Paint mDashLinePaint;
@@ -51,6 +50,10 @@ public class Overlay extends View implements View.OnTouchListener {
     private Path mPath = new Path();
     private Paint mBgPaint;
     private Paint mBgTextPaint;
+    private float mPressX;
+    private boolean mShowReticle;
+    private Paint mReticlePaint;
+    private Point mMinPoint;
 
     public Overlay(Context context) {
         this(context, null);
@@ -79,7 +82,6 @@ public class Overlay extends View implements View.OnTouchListener {
         this.mYCalCount = calCount;
         this.mXCalValues = totalX;
         this.mChartValues = chartValues;
-        this.setOnTouchListener(this);
     }
 
     /**
@@ -122,6 +124,11 @@ public class Overlay extends View implements View.OnTouchListener {
         mBgTextPaint.setTextSize(dipToPx(12));
         mBgTextPaint.setStyle(Paint.Style.FILL);
         mBgTextPaint.setColor(Color.WHITE);
+        //十字线
+        mReticlePaint = new Paint();
+        mReticlePaint.setAntiAlias(true);
+        mReticlePaint.setColor(Color.parseColor("#2b2b2b"));
+        mReticlePaint.setStyle(Paint.Style.FILL);
     }
 
     @Override
@@ -181,59 +188,83 @@ public class Overlay extends View implements View.OnTouchListener {
         drawTimeCal(canvas);
         drawChartLine(canvas);
         drawPointCircle(canvas);
-        drawRectBackGround(canvas);
-    }
-
-    /**
-     * 画点击的原点的背景
-     *
-     * @param canvas
-     */
-    private void drawRectBackGround(Canvas canvas) {
-
-        if (mPosition != -1) {
-
-            int x = mTotalPoints.get(mPosition).x;
-            int y = mTotalPoints.get(mPosition).y;
-            canvas.drawRect(x - dipToPx(15), y - dipToPx(18), x + dipToPx(15), y - dipToPx(6), mBgPaint);
-
-            String value = String.valueOf(mChartValues[mPosition]);
-            Rect rect = new Rect();
-            mBgTextPaint.getTextBounds(value,0,value.length(),rect);
-            canvas.drawText(value,x-rect.width()/2,y-dipToPx(12)+rect.height()/2,mBgTextPaint);
-        }
+        drawLongPress(canvas);
     }
 
     @Override
-    public boolean onTouch(View view, MotionEvent motionEvent) {
+    public boolean onTouchEvent(MotionEvent motionEvent) {
 
-        boolean inArea = isInArea(motionEvent.getX(), motionEvent.getY());
+        long downTime = 0;
         switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                if (inArea) {
-                    postInvalidate();
-                    return true;
-                }
+                downTime = motionEvent.getDownTime();
                 break;
             case MotionEvent.ACTION_MOVE:
+                mPressX = motionEvent.getX();   //按下的位置的X坐标
+                if (motionEvent.getEventTime() - downTime > 700) {
+                    drawReticle();
+                }
+
                 break;
             case MotionEvent.ACTION_UP:
+                hideRecticle();
                 break;
         }
         return true;
     }
 
-    public boolean isInArea(float x, float y) {
+    /**
+     * 隐藏十字线和提示
+     */
+    private void hideRecticle() {
 
+        postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mShowReticle = false;
+                invalidate();
+            }
+        },1000);
+    }
+
+    /**
+     * 绘制十字线
+     */
+    private void drawReticle() {
+        mShowReticle = true;
+        invalidate();
+    }
+
+    /**
+     * 处理长按滑动时候十字线
+     * @param canvas
+     */
+    public void drawLongPress(Canvas canvas) {
+        if(!mShowReticle){
+            return;
+        }
+        mMinPoint = null;
+        int minX = Integer.MAX_VALUE;
         for (int i = 0; i < mTotalPoints.size(); i++) {
-            int tempX = mTotalPoints.get(i).x;
-            int tempY = mTotalPoints.get(i).y;
-            if (x >= tempX - dipToPx(5) && x <= tempX + dipToPx(5) && y >= tempY - dipToPx(5) && y <= tempY + dipToPx(5)) {
+            Point point = mTotalPoints.get(i);
+            int pointX = point.x;
+            float absX = Math.abs(pointX - mPressX);
+            if (absX < minX) {
+                minX = (int) absX;
+                mMinPoint = point;
                 mPosition = i;
-                return true;
             }
         }
-        return false;
+        canvas.drawLine(mWidth * mMultiple, mMinPoint.y,mWidth - mWidth * mMultiple, mMinPoint.y,mReticlePaint);
+        canvas.drawLine(mMinPoint.x,mHeight*mMultiple, mMinPoint.x,mHeight-mWidth*mMultiple,mReticlePaint);
+
+        int x = mMinPoint.x;
+        int y = mMinPoint.y;
+        canvas.drawRect(x - dipToPx(15), y - dipToPx(18), x + dipToPx(15), y - dipToPx(6), mBgPaint);
+        String value = String.valueOf(mChartValues[mPosition]);
+        Rect rect = new Rect();
+        mBgTextPaint.getTextBounds(value, 0, value.length(), rect);
+        canvas.drawText(value, x - rect.width() / 2, y - dipToPx(12) + rect.height() / 2, mBgTextPaint);
     }
 
     /**
