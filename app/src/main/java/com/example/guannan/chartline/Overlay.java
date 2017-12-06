@@ -48,12 +48,14 @@ public class Overlay extends View {
 
     //折线的路径
     private Path mPath = new Path();
+    private Path mPathBg = new Path();
     private Paint mBgPaint;
     private Paint mBgTextPaint;
     private float mPressX;
     private boolean mShowReticle;
     private Paint mReticlePaint;
     private Point mMinPoint;
+    private Paint mChartBgPaint;
 
     public Overlay(Context context) {
         this(context, null);
@@ -109,6 +111,11 @@ public class Overlay extends View {
         mChartPaint.setStyle(Paint.Style.STROKE);
         mChartPaint.setAntiAlias(true);
         mChartPaint.setColor(0xff02bbb7);
+        //折线图下方背景画笔
+        mChartBgPaint = new Paint();
+        mChartBgPaint.setStyle(Paint.Style.FILL);
+        mChartBgPaint.setAntiAlias(true);
+        mChartBgPaint.setColor(Color.parseColor("#74caf9"));
         //穿过这线小圆点
         mPointPaint = new Paint();
         mPointPaint.setStyle(Paint.Style.STROKE);
@@ -164,17 +171,28 @@ public class Overlay extends View {
         //初始化这线上每个点的坐标位置
         for (int i = 0; i < mXCalValues.length; i++) {
             Point point = new Point();
-            if (i == 0)
+            if (i == 0) {
                 point.x = (int) (mWidth * mMultiple + mDiffValue / 2);
-            else
+            } else {
                 point.x = (int) (mWidth * mMultiple + mBottomCalWidth * i + mDiffValue / 2);
+            }
 
             point.y = (int) (mHeight - dipToPx(15) - 2 * mTextPadding - mChartValues[i] * valueOfPx);
             mTotalPoints.add(point);
             if (i == 0)  //连接所有的折线转折点
+            {
                 mPath.moveTo(point.x, point.y);
-            else
+                mPathBg.moveTo(point.x,point.y);
+            } else {
                 mPath.lineTo(point.x, point.y);
+                mPathBg.lineTo(point.x,point.y);
+            }
+            if(i == mXCalValues.length -1){ //最后一个点
+
+                mPathBg.lineTo(point.x,mHeight - dipToPx(16) - 2 * mTextPadding);
+                mPathBg.lineTo(mWidth * mMultiple,mHeight - dipToPx(16) - 2 * mTextPadding);
+                mPathBg.close();
+            }
         }
     }
 
@@ -292,6 +310,7 @@ public class Overlay extends View {
     private void drawChartLine(Canvas canvas) {
 
         canvas.drawPath(mPath, mChartPaint);
+        canvas.drawPath(mPathBg,mChartBgPaint);
     }
 
     /**
