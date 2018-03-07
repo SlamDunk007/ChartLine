@@ -216,13 +216,12 @@ public class Overlay extends View {
         switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 downTime = motionEvent.getDownTime();
+                mPressX = motionEvent.getX();   //按下的位置的X坐标
                 break;
             case MotionEvent.ACTION_MOVE:
-                mPressX = motionEvent.getX();   //按下的位置的X坐标
                 if (motionEvent.getEventTime() - downTime > 700) {
                     drawReticle();
                 }
-
                 break;
             case MotionEvent.ACTION_UP:
                 hideRecticle();
