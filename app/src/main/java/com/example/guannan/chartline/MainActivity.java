@@ -17,8 +17,6 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < xParamsValue.length; i++) {
             chartValues[i] = new Random().nextInt(750);
         }
-
-        String name = "";
         overlay.setCalValue(750, 10, xParamsValue, chartValues);
     }
 }
