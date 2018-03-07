@@ -11,9 +11,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         Overlay overlay = (Overlay) findViewById(R.id.scoreTrend);
-
         String[] xParamsValue = {"7月", "8月", "9月", "10月", "11月", "12月"};
         float[] chartValues = new float[xParamsValue.length];
         for (int i = 0; i < xParamsValue.length; i++) {
