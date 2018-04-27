@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="BaseLineView">
+        <!--分时图的左内边距-->
+        <attr name="paddingLeft" format="dimension"/>
+        <!--分时图的上内边距-->
+        <attr name="paddingTop" format="dimension"/>
+        <!--分时图的右内边距-->
+        <attr name="paddingRight" format="dimension"/>
+        <!--分时图的下内边距-->
+        <attr name="paddingBottom" format="dimension"/>
+        <!--分时图价格和成交量之间的区域-->
+        <attr name="centerAreaSize" format="dimension"/>
+    </declare-styleable>
+
+</resources>

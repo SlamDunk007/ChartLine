@@ -6,4 +6,14 @@ package com.example.guannan.chartline.data;
  */
 
 public class TimeSharingResult {
+
+    private TimeSharingData result;
+
+    public TimeSharingData getResult() {
+        return result;
+    }
+
+    public void setResult(TimeSharingData result) {
+        this.result = result;
+    }
 }

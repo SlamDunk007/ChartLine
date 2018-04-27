@@ -2,12 +2,17 @@
 <RelativeLayout
     android:id="@+id/activity_main"
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.example.guannan.chartline.Overlay
-        android:id="@+id/scoreTrend"
+    <com.example.guannan.chartline.widget.BaseLineView
+        android:id="@+id/time_sharing"
         android:background="#ffffff"
         android:layout_width="match_parent"
-        android:layout_height="300dp"/>
+        android:layout_height="360dp"
+        app:paddingLeft="5dp"
+        app:paddingRight="5dp"
+        app:paddingTop="5dp"
+        app:paddingBottom="5dp"/>
 </RelativeLayout>

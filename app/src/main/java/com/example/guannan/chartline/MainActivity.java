@@ -1,22 +1,26 @@
 package com.example.guannan.chartline;
 
+import android.app.Activity;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 
-import java.util.Random;
+import com.example.guannan.chartline.data.TimeSharingDetail;
+import com.example.guannan.chartline.http.HttpManager;
+import com.example.guannan.chartline.widget.BaseLineView;
+import com.example.guannan.chartline.widget.TimeSharingChart;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.ArrayList;
+
+public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Overlay overlay = (Overlay) findViewById(R.id.scoreTrend);
-        String[] xParamsValue = {"7月", "8月", "9月", "10月", "11月", "12月"};
-        float[] chartValues = new float[xParamsValue.length];
-        for (int i = 0; i < xParamsValue.length; i++) {
-            chartValues[i] = new Random().nextInt(750);
-        }
-        overlay.setCalValue(750, 10, xParamsValue, chartValues);
+
+        BaseLineView baseLineView = (BaseLineView) findViewById(R.id.time_sharing);
+        ArrayList<TimeSharingDetail> list = (ArrayList<TimeSharingDetail>) HttpManager.getInstance().getTimeSharingList(this);
+        TimeSharingChart timeSharingChart = new TimeSharingChart(this,list,5.40f);
+        baseLineView.setCurrentView(timeSharingChart);
     }
+
 }
