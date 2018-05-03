@@ -15,6 +15,7 @@ public class TimeSharingDetail {
     private String price;   //当前价
     @SerializedName("v")
     private String volume;  //成交量
+    public Boolean isFall; //false:上涨还是 true:下跌
 
     public String getTime() {
         return time;
@@ -39,5 +40,4 @@ public class TimeSharingDetail {
     public void setVolume(String volume) {
         this.volume = volume;
     }
-
 }
